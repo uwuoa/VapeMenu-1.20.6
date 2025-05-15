@@ -1,8 +1,9 @@
-package me.corruptionhades.vapemenu.gui.clickgui;
+package me.corruptionhades.vapemenu.ui.clickgui;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import me.corruptionhades.vapemenu.VapeMenu;
-import me.corruptionhades.vapemenu.gui.clickgui.components.ModButton;
+import me.corruptionhades.vapemenu.ui.clickgui.components.ModButton;
 import me.corruptionhades.vapemenu.module.Category;
 import me.corruptionhades.vapemenu.module.Module;
 import me.corruptionhades.vapemenu.module.ModuleManager;
@@ -10,12 +11,14 @@ import me.corruptionhades.vapemenu.utils.Animation;
 import me.corruptionhades.vapemenu.utils.RenderUtils;
 import me.corruptionhades.vapemenu.utils.Theme;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.util.Window;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 
+import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -118,16 +121,18 @@ public class VapeClickGui extends Screen {
     }
 
     @Override
-    public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
-        super.render(matrices, mouseX, mouseY, delta);
+    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        super.render(context, mouseX, mouseY, delta);
+
+        MatrixStack matrices = context.getMatrices();
 
         // Get an outro value
         float outro = smoothTrans(this.outro, lastOutro);
         // Check if player is ingame
         if (mc.currentScreen == null) {
-            matrices.translate(mc.getWindow().getScaledWidth() / 2, mc.getWindow().getScaledHeight() / 2, 0);
+            matrices.translate(mc.getWindow().getScaledWidth() / 2f, mc.getWindow().getScaledHeight() / 2f, 0);
             matrices.scale(outro, outro, 0);
-            matrices.translate(-mc.getWindow().getScaledWidth() / 2, -mc.getWindow().getScaledHeight() / 2, 0);
+            matrices.translate(-mc.getWindow().getScaledWidth() / 2f, -mc.getWindow().getScaledHeight() / 2f, 0);
         }
 
         // Get percent values
@@ -136,14 +141,14 @@ public class VapeClickGui extends Screen {
 
         if (percent > 0.98) {
             // Scale window
-            matrices.translate(mc.getWindow().getScaledWidth() / 2, mc.getWindow().getScaledHeight() / 2, 0);
+            matrices.translate(mc.getWindow().getScaledWidth() / 2f, mc.getWindow().getScaledHeight() / 2f, 0);
             matrices.scale(percent, percent, 0);
-            matrices.translate(-mc.getWindow().getScaledWidth() / 2, -mc.getWindow().getScaledHeight() / 2, 0);
+            matrices.translate(-mc.getWindow().getScaledWidth() / 2f, -mc.getWindow().getScaledHeight() / 2f, 0);
         } else {
             if (percent2 <= 1) {
-                matrices.translate(mc.getWindow().getScaledWidth() / 2, mc.getWindow().getScaledHeight() / 2, 0);
+                matrices.translate(mc.getWindow().getScaledWidth() / 2f, mc.getWindow().getScaledHeight() / 2f, 0);
                 matrices.scale(percent2, percent2, 0);
-                matrices.translate(-mc.getWindow().getScaledWidth() / 2, -mc.getWindow().getScaledHeight() / 2, 0);
+                matrices.translate(-mc.getWindow().getScaledWidth() / 2f, -mc.getWindow().getScaledHeight() / 2f, 0);
             }
         }
 
@@ -177,38 +182,33 @@ public class VapeClickGui extends Screen {
         }
 
         // Draw the window                                                                                  corner radius
-        RenderUtils.renderRoundedQuad(matrices, windowX, windowY, windowX + width, windowY + height, 25, 20, Theme.WINDOW_COLOR);
+        RenderUtils.renderRoundedQuad(context, windowX, windowY, windowX + width, windowY + height, 25, 20, Theme.WINDOW_COLOR);
 
         // Draw the Client name
-        matrices.push();
-        // Scales the text
-        matrices.scale(2, 2, 0);
-        //                                              Divide by 2 because scale
-        mc.textRenderer.draw(matrices, VapeMenu.getName(), (windowX + 20) / 2, (windowY + 20) / 2, -1);
-        matrices.pop();
+        VapeMenu.getFontRenderer().drawString(matrices, VapeMenu.getInstance().getName(), (windowX + 20), (windowY + 20), -1);
 
         if(viewType == ViewType.CONFIG) {
 
             // Transition
             if(transition != null) {
                 transition.update(true);
-                RenderUtils.fill(matrices, transition.getValue(), windowY, transition.getEnd() - 19, windowY + height, Theme.WINDOW_COLOR.getRGB());
+                RenderUtils.fill(context, transition.getValue(), windowY, transition.getEnd() - 19, windowY + height, Theme.WINDOW_COLOR.getRGB());
                 if(transition.hasEnded()) transition = null;
             }
 
-            configScreen.drawScreen(matrices, mouseX, mouseY, delta);
+            configScreen.drawScreen(context, mouseX, mouseY, delta);
 
             // Back button
             if(isHovered(windowX + 20, windowY + height - 50, windowX + 20 + 32, windowY + height - 50 + 32, mouseX, mouseY) && configScreen.editConfigMenu == null) {
                 matrices.push();
-                RenderUtils.drawTexturedRectangle(matrices, windowX + 20, windowY + height - 50, "textures/back.png");
+                RenderUtils.drawTexturedRectangle(context, windowX + 20, windowY + height - 50, "textures/back.png");
                 matrices.pop();
             }
             else  {
                 matrices.push();
                 RenderSystem.setShader(GameRenderer::getPositionColorProgram);
                 RenderSystem.setShaderColor(0.25f, 0.25f, 0.25f, 1f);
-                RenderUtils.drawTexturedRectangle(matrices, windowX + 20, windowY + height - 50, "textures/back.png");
+                RenderUtils.drawTexturedRectangle(context, windowX + 20, windowY + height - 50, "textures/back.png");
                 RenderSystem.clearColor(1f, 1f, 1f, 1f);
                 matrices.pop();
             }
@@ -218,7 +218,8 @@ public class VapeClickGui extends Screen {
 
         Window window = mc.getWindow();
         // Draw the categories
-        RenderSystem.enableScissor((int) (windowX + 5) * 2, (int) (-windowY + (height / 2) + 55) * 2, window.getScaledWidth() + 40, window.getScaledHeight() - 10);
+        // RenderSystem.enableScissor((int) (windowX + 5) * 2, (int) (-windowY + (height / 2f) + 55) * 2, window.getScaledWidth() + 40, window.getScaledHeight() - 10);
+        RenderUtils.enableScissor(windowX + 5, windowY + 55, windowX + width - 5, windowY + height - 15);
 
         // Easier to see where is being scissored
         //RenderUtils.fill(matrices.peek().getPositionMatrix(), window.getScaledWidth(), window.getScaledHeight(), -window.getScaledWidth(), -window.getScaledHeight(), -1);
@@ -229,14 +230,15 @@ public class VapeClickGui extends Screen {
             // Show Config icon
             if(isHovered(windowX + 20, windowY + height - 50, windowX + 20 + 32, windowY + height - 50 + 32, mouseX, mouseY)) {
                 matrices.push();
-                RenderUtils.drawTexturedRectangle(matrices, windowX + 20, windowY + height - 50, "textures/config.png");
+                RenderUtils.drawTexturedRectangle(context, windowX + 20, windowY + height - 50, "textures/config.png");
                 matrices.pop();
             }
             else  {
                 matrices.push();
                 RenderSystem.setShader(GameRenderer::getPositionColorProgram);
                 RenderSystem.setShaderColor(0.25f, 0.25f, 0.25f, 1f);
-                RenderUtils.drawTexturedRectangle(matrices, windowX + 20, windowY + height - 50, "textures/config.png");
+                RenderUtils.drawTexturedRectangle(context, windowX + 20, windowY + height - 50, "textures/config.png");
+                RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
                 matrices.pop();
             }
 
@@ -247,17 +249,17 @@ public class VapeClickGui extends Screen {
                 // If the category is selected
                 if (category == selectedCategory) {
                     // White Category name for highlighting
-                    mc.textRenderer.draw(matrices, category.name(), windowX + 20, cateY, -1);
+                    VapeMenu.getFontRenderer().drawString(matrices, category.name(), windowX + 20, cateY, -1);
                     // Draw the Category underline
-                    RenderUtils.renderRoundedQuad(matrices, windowX + 20, hy + mc.textRenderer.fontHeight + 2, windowX + 30, hy + mc.textRenderer.fontHeight + 4, 1, 20, Theme.ENABLED);
+                    RenderUtils.renderRoundedQuad(context, windowX + 20, hy + mc.textRenderer.fontHeight + 2, windowX + 30, hy + mc.textRenderer.fontHeight + 4, 1, 20, Theme.ENABLED);
 
                     // Update the underline position
                     if (hy != cateY) {
-                        hy += (cateY - hy) / 20;
+                        hy += (cateY - hy) / 2f;
                     }
                 } else {
                     // Gray-ish category name
-                    mc.textRenderer.draw(matrices, category.name(), windowX + 20, cateY, Theme.UNFOCUSED_TEXT_COLOR.getRGB());
+                    VapeMenu.getFontRenderer().drawString(matrices, category.name(), windowX + 20, cateY, Theme.UNFOCUSED_TEXT_COLOR.getRGB());
                 }
 
                 cateY += 25;
@@ -278,10 +280,10 @@ public class VapeClickGui extends Screen {
         if(selectedModule != null) {
             // Draw Settings field
 
-            RenderUtils.renderRoundedQuad(matrices,windowX + 430 + settingsFieldX, windowY + 60, windowX + width, windowY + height - 20, 5, 20, Theme.SETTINGS_BG);
-            RenderUtils.renderRoundedQuad(matrices, windowX + 430 + settingsFieldX, windowY + 60, windowX + width, windowY + 85, 5, 20, Theme.SETTINGS_HEADER);
+            RenderUtils.renderRoundedQuad(context,windowX + 430 + settingsFieldX, windowY + 60, windowX + width, windowY + height - 20, 5, 20, Theme.SETTINGS_BG);
+            RenderUtils.renderRoundedQuad(context, windowX + 430 + settingsFieldX, windowY + 60, windowX + width, windowY + 85, 5, 20, Theme.SETTINGS_HEADER);
 
-            mc.textRenderer.draw(matrices, selectedModule.getName(), windowX + 450 + settingsFieldX, windowY + 70, -1);
+            VapeMenu.getFontRenderer().drawString(matrices, selectedModule.getName(), windowX + 450 + settingsFieldX, windowY + 70, -1);
 
             // Settings scroll
             if (isHovered(windowX + 430 + (int) settingsFieldX, windowY + 60, windowX + width, windowY + height - 20, mouseX, mouseY)) {
@@ -295,7 +297,7 @@ public class VapeClickGui extends Screen {
 
             // Update Setting animation values
             if (settingsFNow != settingsF) {
-                settingsFNow += (settingsF - settingsFNow) / 20;
+                settingsFNow += (settingsF - settingsFNow) / 2f;
                 settingsFNow = (int) settingsFNow;
             }
         }
@@ -312,7 +314,7 @@ public class VapeClickGui extends Screen {
 
         // Smoother scroll
         if (modScrollNow != modScrollEnd) {
-            modScrollNow += (modScrollEnd - modScrollNow) / 20;
+            modScrollNow += (modScrollEnd - modScrollNow) / 2f;
             modScrollNow = (int) modScrollNow;
         }
 
@@ -321,23 +323,24 @@ public class VapeClickGui extends Screen {
         for(ModButton modButton : modButtons) {
             if(ModuleManager.INSTANCE.getModulesByCategory(selectedCategory).contains(modButton.getModule())) {
                 modButton.setY(modY);
-                modButton.drawScreen(matrices, mouseX, mouseY, delta);
+                modButton.drawScreen(context, mouseX, mouseY, delta);
                 modY += 40;
             }
         }
-        RenderSystem.disableScissor();
+
+        RenderUtils.disableScissor();
 
         // Transition
         if(transition != null) {
             transition.update(true);
-            RenderUtils.fill(matrices, transition.getValue(), windowY, transition.getEnd() - 19, windowY + height, Theme.WINDOW_COLOR.getRGB());
+            RenderUtils.fill(context, transition.getValue(), windowY, transition.getEnd() - 19, windowY + height, Theme.WINDOW_COLOR.getRGB());
             if(transition.hasEnded()) transition = null;
         }
     }
 
     // Smoothly transitions between 2 values (stolen from Lune lol, the more fps you have the faster it will be (made for optimization purposes))
     public float smoothTrans(double current, double last){
-        return (float) (current + (last - current) / (MinecraftClient.getInstance().getCurrentFps() / 10));
+        return (float) (current + (last - current) / (Double.parseDouble(MinecraftClient.getInstance().fpsDebugString.split(" ")[0]) / 10));
     }
 
     @Override
@@ -419,16 +422,24 @@ public class VapeClickGui extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        // スクロールイベントを処理
+        if (isHovered(windowX + 100 + settingsFieldX, windowY + 60, windowX + 425 + settingsFieldX, windowY + height, mouseX, mouseY)) {
+            this.dWheel = verticalAmount; // ← 以前の amount は verticalAmount に相当
+        }
 
-        // Set Scroll value
-        if(isHovered(windowX + 100 + settingsFieldX, windowY + 60, windowX + 425 + settingsFieldX, windowY + height, mouseX, mouseY)) this.dWheel = amount;
-
-        return super.mouseScrolled(mouseX, mouseY, amount);
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
+
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        // ESCキー判定 (MinecraftのKeyBindingsより)
+        if (keyCode == 256) {  // 256 は ESC のkeyCodeです
+            // GUIを閉じる
+            MinecraftClient.getInstance().setScreen(null);
+            return true;  // 処理済みとして返す
+        }
         for(ModButton mb : modButtons) {
             mb.keyPressed(keyCode, scanCode, modifiers);
         }
@@ -452,13 +463,13 @@ public class VapeClickGui extends Screen {
         super.close();
         // Save current config
         try {
-            VapeMenu.selectedConfig.save();
+            VapeMenu.getInstance().selectedConfig.save();
         } catch (IOException e) {
             e.printStackTrace();
         }
         // Reload the selected config
         try {
-            VapeMenu.selectedConfig.load();
+            VapeMenu.getInstance().selectedConfig.load();
         } catch (IOException e) {
             e.printStackTrace();
         }
